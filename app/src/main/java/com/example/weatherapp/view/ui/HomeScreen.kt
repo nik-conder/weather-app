@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -19,13 +21,25 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.weatherapp.data.test.CurrentWeather
+import com.example.weatherapp.view.WeatherEvents
+import com.example.weatherapp.view.ui.HomeViewModel
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    vm: HomeViewModel = viewModel()
+) {
 
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp
+
+    val stateWeather = vm.stateWeather.collectAsState()
+
+    val onEvent = vm::onEvent
+
+    val currentWeather = stateWeather.value.currentWeather
 
     val colorList = listOf(
         Color(red = 32, green = 124, blue = 223, alpha = 255),
@@ -46,7 +60,7 @@ fun HomeScreen() {
             .fillMaxSize()
     ) {
 
-        var (date, temperature, currentWeatherDetailInfo, weatherOn10Days) = createRefs()
+        var (date, temperature, currentWeatherDetailInfo, weatherOn10Days, btnRefresh) = createRefs()
 
         BoxWithConstraints(
             modifier = Modifier.constrainAs(date) {
@@ -87,7 +101,7 @@ fun HomeScreen() {
                 end.linkTo(parent.end, margin = marginPage)
             }
         ) {
-            BlockInfoTemperature(width = this.maxWidth)
+            BlockInfoTemperature(width = this.maxWidth, currentWeather = currentWeather)
         }
 
         BoxWithConstraints(
@@ -98,6 +112,20 @@ fun HomeScreen() {
             }
         ) {
             BlockWeatherOnSeveralDays(width = this.maxWidth)
+        }
+
+        BoxWithConstraints(
+            modifier = Modifier.constrainAs(btnRefresh) {
+                top.linkTo(weatherOn10Days.bottom)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+            }
+        ) {
+            Button(onClick = {
+                onEvent(WeatherEvents.Update)
+            }) {
+                Text(text = "Update")
+            }
         }
 
     }
@@ -155,15 +183,10 @@ fun BlockInfo(
 
 @Composable
 fun BlockInfoTemperature(
-    width: Dp
+    width: Dp,
+    currentWeather: CurrentWeather?
 ) {
-    val weather = arrayListOf(
-        "wind" to "7.2 м/с СЗ",
-        "humidity" to "80%",
-        "visibility" to "10 км",
-        "pressure" to "1021hPa",
-        "updated" to "сегодня в 11:21"
-    )
+
     BlockInfo(width) {
         Column(
             modifier = Modifier
@@ -173,15 +196,25 @@ fun BlockInfoTemperature(
             Row() {
                 Header(text = "Детальная информация")
             }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                items(items = weather) {
-                    Text(
-                        text = "${it.first}: ${if (it.second.isNotEmpty()) it.second else "н/д"}",
-                        color = Color.White
-                    )
+            if (currentWeather != null) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    currentWeather.current.let {
+                        item {
+                            Row() {
+                                Text(color = Color.White, fontSize = 14.sp, text = "Обновлено: ${it.last_updated}")
+                            }
+                            Row() {
+                                Text(color = Color.White, fontSize = 14.sp, text = "Ветер: ${it.wind_kph} ${it.wind_dir}")
+                            }
+                            Row() {
+                                Text(color = Color.White, fontSize = 14.sp, text = "Видимость: ${it.vis_km} км")
+                            }
+                        }
+                    }
                 }
+            } else {
+                Text(text = "Нет данных")
             }
-
         }
     }
 }
