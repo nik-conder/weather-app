@@ -9,8 +9,8 @@ import javax.inject.Inject
 class ApiRepository @Inject constructor(
     private val weatherSource: WeatherSource
 ) {
-    fun getWeather(): Response<CurrentWeather> {
-        return weatherSource.getWeather().execute()
+    fun getWeather(q: String, lang: String): Call<CurrentWeather> {
+        return weatherSource.getWeather(q = q, lang = lang)
     }
     fun getConnect(): Call<Int> {
         return weatherSource.getConnect()

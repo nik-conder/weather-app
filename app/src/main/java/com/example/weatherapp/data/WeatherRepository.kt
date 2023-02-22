@@ -11,8 +11,8 @@ class WeatherRepositoryImpl @Inject constructor(
     private val weatherSource: WeatherSource
     ): WeatherRepository {
 
-    override suspend fun getWeather(): Call<CurrentWeather> {
-        return weatherSource.getWeather()
+    override suspend fun getWeather(q: String, lang: String): Call<CurrentWeather> {
+        return weatherSource.getWeather(q = q, lang = lang)
     }
 
     override suspend fun getConnect(): Call<Int> {

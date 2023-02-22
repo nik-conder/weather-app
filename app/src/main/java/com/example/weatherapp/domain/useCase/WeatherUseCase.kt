@@ -14,7 +14,7 @@ class WeatherUseCase @Inject constructor(
     suspend fun getConnect(): Call<Int> {
         return apiRepository.getConnect()
     }
-    suspend fun getWeather(): Response<CurrentWeather> {
-        return apiRepository.getWeather()
+    suspend fun getWeather(q: String = "Moscow", lang: String = "ru"): Response<CurrentWeather> {
+        return apiRepository.getWeather(q, lang).execute()
     }
 }
