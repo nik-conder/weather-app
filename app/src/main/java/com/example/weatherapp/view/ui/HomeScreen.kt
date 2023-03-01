@@ -80,7 +80,7 @@ fun HomeScreen(
             .fillMaxSize()
     ) {
 
-        val (currentWeatherInfo, currentWeatherDetailBlock, weatherOn5DaysBlock, btnRefresh) = createRefs()
+        val (currentWeatherInfo, currentWeatherDetailBlock, weatherOn5DaysBlock) = createRefs()
 
         BoxWithConstraints(
             modifier = Modifier.constrainAs(currentWeatherInfo) {
@@ -105,6 +105,13 @@ fun HomeScreen(
                             fontSize = 14.sp,
                             color = Color.White
                         )
+                    }
+                    Row() {
+                        Button(onClick = {
+                            onEvent(WeatherEvents.Refresh)
+                        }) {
+                            Text(text = "Refresh")
+                        }
                     }
                 }
 
@@ -171,20 +178,6 @@ fun HomeScreen(
             }
         ) {
             BlockWeatherOnSeveralDays(width = this.maxWidth, forecastWeather = forecastWeather)
-        }
-
-        BoxWithConstraints(
-            modifier = Modifier.constrainAs(btnRefresh) {
-                top.linkTo(weatherOn5DaysBlock.bottom)
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-            }
-        ) {
-            Button(onClick = {
-                onEvent(WeatherEvents.Update)
-            }) {
-                Text(text = "Update")
-            }
         }
     }
 }
