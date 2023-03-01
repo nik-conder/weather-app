@@ -1,38 +1,33 @@
 package com.example.weatherapp.ui.theme
 
-import android.content.res.Configuration.UI_MODE_NIGHT_NO
+import android.icu.text.SimpleDateFormat
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.weatherapp.data.test.CurrentWeather
 import com.example.weatherapp.view.WeatherEvents
 import com.example.weatherapp.view.ui.HomeViewModel
+import com.example.weatherapp.view.ui.components.BlockInfoTemperature
+import com.example.weatherapp.view.ui.components.BlockWeatherOnSeveralDays
 import kotlinx.coroutines.delay
-import java.time.LocalDateTime
+import java.util.*
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
     vm: HomeViewModel = viewModel()
@@ -44,6 +39,8 @@ fun HomeScreen(
     val stateWeather = vm.stateWeather.collectAsState()
     val onEvent = vm::onEvent
     val currentWeather = stateWeather.value.currentWeather
+    val forecastWeather = stateWeather.value.forecastWeather?.forecast?.forecastday
+    val networkAvailable = stateWeather.value.networkAvailable
     val isDay = if (currentWeather != null) currentWeather.current.is_day else 0
     val isLoading  = stateWeather.value.isLoading
     val colorList = if (isDay == 1) {
@@ -66,13 +63,24 @@ fun HomeScreen(
 
     val marginPage = 15.dp
 
+    val sdf = SimpleDateFormat("dd.mm.yyyy hh:mm:ss")
+    val currentDate = remember { mutableStateOf("") }
+
+
+    LaunchedEffect(true)  {
+        while (true) {
+            currentDate.value = sdf.format(Date())
+            delay(1000)
+        }
+    }
+
     ConstraintLayout(
         modifier = Modifier
             .background(backgroundGradient)
             .fillMaxSize()
     ) {
 
-        var (currentWeatherInfo, currentWeatherDetailBlock, weatherOn5DaysBlock, btnRefresh) = createRefs()
+        val (currentWeatherInfo, currentWeatherDetailBlock, weatherOn5DaysBlock, btnRefresh) = createRefs()
 
         BoxWithConstraints(
             modifier = Modifier.constrainAs(currentWeatherInfo) {
@@ -84,11 +92,22 @@ fun HomeScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
                     Text(
-                        text = "Сегодня 18 февраля, суббота, 11:21",
+                        text = currentDate.value,
                         fontSize = 14.sp,
                         color = Color.White
                     )
                 }
+
+                if (!networkAvailable) {
+                    Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
+                        Text(
+                            text = "Нет интерент соединения!",
+                            fontSize = 14.sp,
+                            color = Color.White
+                        )
+                    }
+                }
+
                 if (isLoading) {
                     Row(
                         modifier = Modifier.padding(top = 20.dp, bottom = 20.dp),
@@ -151,7 +170,7 @@ fun HomeScreen(
                 end.linkTo(parent.end, margin = marginPage)
             }
         ) {
-            BlockWeatherOnSeveralDays(width = this.maxWidth)
+            BlockWeatherOnSeveralDays(width = this.maxWidth, forecastWeather = forecastWeather)
         }
 
         BoxWithConstraints(
@@ -167,147 +186,5 @@ fun HomeScreen(
                 Text(text = "Update")
             }
         }
-
     }
-}
-
-@Composable
-fun Header(
-    text: String
-) {
-    BoxWithConstraints {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-                .drawBehind {
-                    drawLine(
-                        Color.LightGray,
-                        Offset(0f, 70f),
-                        Offset(this.size.width, 70f),
-                        1f
-                    )
-                }) {
-            Text(
-                text = text,
-                fontSize = 16.sp,
-                fontWeight = FontWeight(500)
-            )
-        }
-    }
-
-}
-
-@Composable
-fun BlockInfo(
-    width: Dp,
-    content: @Composable() (BoxScope.() -> Unit)
-) {
-    val colorList = listOf(
-        Color(red = 24, green = 110, blue = 202, alpha = 100),
-        Color(red = 62, green = 95, blue = 131, alpha = 155)
-    )
-
-    val backgroundGradient = Brush.linearGradient(
-        colors = colorList,
-        start = Offset(width.value * 2, 0f),
-        end = Offset(0f, 0f)
-    )
-
-    Box(
-        modifier = Modifier
-            .background(backgroundGradient, RoundedCornerShape(20.dp)),
-        content = content
-    )
-}
-
-@Composable
-fun BlockInfoTemperature(
-    width: Dp,
-    currentWeather: CurrentWeather?
-) {
-
-    BlockInfo(width) {
-        Column(
-            modifier = Modifier
-                .padding(20.dp)
-                .fillMaxWidth(0.9f),
-        ) {
-            Row() {
-                Header(text = "Подробная информация")
-            }
-            if (currentWeather != null) {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    currentWeather.current.let {
-                        item {
-                            Row() {
-                                Text(
-                                    fontSize = 14.sp,
-                                    text = "Ветер: ${it.wind_kph} км/ч, ${it.wind_dir} направления"
-                                )
-                            }
-                        }
-
-                        item {
-                            Row() {
-                                Text(
-                                    fontSize = 14.sp,
-                                    text = "Атм. давление: ${it.pressure_mb} миллибар"
-                                )//todo pressure_mb / 1.33 = мм рт.ст
-                            }
-                        }
-
-                        item {
-                            Row() {
-                                Text(fontSize = 14.sp, text = "Влажность: ${it.humidity}%")
-                            }
-                        }
-
-                        item {
-
-                            Row() {
-                                Text(fontSize = 14.sp, text = "Видимость: ${it.vis_km} км.")
-                            }
-                        }
-
-                        item {
-                            Row() {
-                                Text(fontSize = 14.sp, text = "Прогноз от: ${it.last_updated}")
-                            }
-                        }
-                    }
-                }
-            } else {
-                Text(text = "Нет данных")
-            }
-        }
-    }
-}
-
-@Composable
-fun BlockWeatherOnSeveralDays(
-    width: Dp
-) {
-    BlockInfo(width) {
-        Column(
-            modifier = Modifier
-                .padding(20.dp)
-                .fillMaxWidth(0.9f),
-        ) {
-            Row() {
-                Header(text = "Прогноз погоды на 5 дней")
-            }
-            Row {
-                Text(
-                    text = "Нет данных"
-                )
-            }
-        }
-    }
-}
-
-@Preview(showSystemUi = true, showBackground = true, uiMode = UI_MODE_NIGHT_NO)
-@Composable
-fun PreviewHomeScreen() {
-    HomeScreen()
 }

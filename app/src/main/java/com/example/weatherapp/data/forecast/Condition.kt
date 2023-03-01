@@ -1,4 +1,4 @@
-package com.example.weatherapp.data.test
+package com.example.weatherapp.data.forecast
 
 data class Condition(
     val code: Int,

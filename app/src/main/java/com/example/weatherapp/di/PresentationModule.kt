@@ -1,6 +1,7 @@
 package com.example.weatherapp.di
 
 import android.content.Context
+import com.example.weatherapp.domain.useCase.NetworkUseCase
 import com.example.weatherapp.domain.useCase.WeatherUseCase
 import com.example.weatherapp.view.ui.HomeViewModel
 import dagger.Module
@@ -17,8 +18,13 @@ class PresentationModule {
     @Provides
     fun provideMainViewModel(
         @ApplicationContext context: Context,
-        weatherUseCase: WeatherUseCase
+        weatherUseCase: WeatherUseCase,
+        networkUseCase: NetworkUseCase
     ): HomeViewModel {
-        return HomeViewModel(context, weatherUseCase)
+        return HomeViewModel(
+            context,
+            weatherUseCase,
+            networkUseCase
+        )
     }
 }
