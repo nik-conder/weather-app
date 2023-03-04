@@ -1,6 +1,7 @@
 package com.example.weatherapp.domain
 
-import com.example.weatherapp.data.WeatherRepository
+import com.example.weatherapp.data.ApiRepository
+import com.example.weatherapp.domain.repository.WeatherRepository
 import com.example.weatherapp.domain.useCase.WeatherUseCase
 
 import org.junit.After
@@ -9,7 +10,8 @@ import org.junit.Test
 
 class WeatherUseCaseTest {
 
-    val useCase: WeatherUseCase = WeatherUseCase(weatherRepository = WeatherRepository())
+    val apiRepository: ApiRepository = mock()
+    val useCase: WeatherUseCase = WeatherUseCase(apiRepository)
 
     @Before
     fun setUp() {
