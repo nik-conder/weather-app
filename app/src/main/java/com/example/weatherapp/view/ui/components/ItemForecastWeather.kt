@@ -18,7 +18,7 @@ fun ItemForecastWeather(
 
     Row(
         modifier = Modifier.fillMaxWidth()
-            .padding(top = 6.dp),
+            .padding(top = 14.dp),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(0.5f),

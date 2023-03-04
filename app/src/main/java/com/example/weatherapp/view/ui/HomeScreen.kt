@@ -5,9 +5,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,6 +13,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,6 +26,7 @@ import com.example.weatherapp.view.ui.components.BlockWeatherOnSeveralDays
 import kotlinx.coroutines.delay
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
@@ -74,110 +74,129 @@ fun HomeScreen(
         }
     }
 
-    ConstraintLayout(
-        modifier = Modifier
-            .background(backgroundGradient)
-            .fillMaxSize()
-    ) {
-
-        val (currentWeatherInfo, currentWeatherDetailBlock, weatherOn5DaysBlock) = createRefs()
-
-        BoxWithConstraints(
-            modifier = Modifier.constrainAs(currentWeatherInfo) {
-                start.linkTo(parent.start, margin = marginPage)
-                top.linkTo(parent.top, margin = marginPage)
-                end.linkTo(parent.end, margin = marginPage)
-            }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(text = "Weather App") },
+            )
+        },
+    ) { paddingValues ->
+        ConstraintLayout(
+            modifier = Modifier
+                .background(backgroundGradient)
+                .padding(paddingValues)
+                .fillMaxSize()
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
-                    Text(
-                        text = currentDate.value,
-                        fontSize = 14.sp,
-                        color = Color.White
-                    )
-                }
 
-                if (!networkAvailable) {
+            val (currentWeatherInfo, currentWeatherDetailBlock, weatherOn5DaysBlock) = createRefs()
+
+            BoxWithConstraints(
+                modifier = Modifier
+                    .testTag("currentWeatherInfo")
+                    .constrainAs(currentWeatherInfo) {
+                        start.linkTo(parent.start, margin = marginPage)
+                        top.linkTo(parent.top, margin = marginPage)
+                        end.linkTo(parent.end, margin = marginPage)
+                    }
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
                         Text(
-                            text = "Нет интерент соединения!",
+                            text = currentDate.value,
                             fontSize = 14.sp,
                             color = Color.White
                         )
                     }
-                    Row() {
-                        Button(onClick = {
-                            onEvent(WeatherEvents.Refresh)
-                        }) {
-                            Text(text = "Refresh")
-                        }
-                    }
-                }
 
-                if (isLoading) {
-                    Row(
-                        modifier = Modifier.padding(top = 20.dp, bottom = 20.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column() {
-                            Text(text = "Загрузка...", fontSize = 20.sp)
-                        }
-                        Column() {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
-                        }
-                    }
-                } else {
-                    if (currentWeather != null) {
-                        Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
+                    if (!networkAvailable) {
+                        Row(modifier = Modifier
+                            .padding(top = 8.dp, bottom = 8.dp)
+                            .testTag("textNotNetwork")) {
                             Text(
-                                text = "${currentWeather.location.country}, ${currentWeather.location.region}",
-                                fontSize = 12.sp,
+                                text = "Нет интернет соединения!",
+                                fontSize = 14.sp,
                                 color = Color.White
                             )
                         }
-                    }
-                    if (currentWeather != null) {
-                        Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
-                            Text(
-                                text = "${currentWeather.current.temp_c} °C",
-                                fontSize = 42.sp,
-                                color = Color.White,
-                                fontWeight = FontWeight(600)
-                            )
+                        Row() {
+                            Button(
+                                modifier = Modifier.testTag("btnRefresh"),
+                                onClick = {
+                                    onEvent(WeatherEvents.Refresh)
+                                }) {
+                                Text(text = "Refresh")
+                            }
                         }
                     }
-                    if (currentWeather != null) {
-                        Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
-                            Text(
-                                text = currentWeather.current.condition.text,
-                                fontSize = 16.sp,
-                                color = Color.White
-                            )
+
+                    if (isLoading) {
+                        Row(
+                            modifier = Modifier.padding(top = 20.dp, bottom = 20.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column() {
+                                Text(text = "Загрузка...", fontSize = 20.sp)
+                            }
+                            Column() {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                            }
+                        }
+                    } else {
+                        if (currentWeather != null) {
+                            Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
+                                Text(
+                                    text = "${currentWeather.location.country}, ${currentWeather.location.region}",
+                                    fontSize = 12.sp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                        if (currentWeather != null) {
+                            Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
+                                Text(
+                                    text = "${currentWeather.current.temp_c} °C",
+                                    fontSize = 42.sp,
+                                    color = Color.White,
+                                    fontWeight = FontWeight(600)
+                                )
+                            }
+                        }
+                        if (currentWeather != null) {
+                            Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
+                                Text(
+                                    text = currentWeather.current.condition.text,
+                                    fontSize = 16.sp,
+                                    color = Color.White
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
-        BoxWithConstraints(
-            modifier = Modifier.constrainAs(currentWeatherDetailBlock) {
-                start.linkTo(parent.start, margin = marginPage)
-                top.linkTo(currentWeatherInfo.bottom, margin = marginPage)
-                end.linkTo(parent.end, margin = marginPage)
+            BoxWithConstraints(
+                modifier = Modifier
+                    .testTag("currentWeatherDetailBlock")
+                    .constrainAs(currentWeatherDetailBlock) {
+                        start.linkTo(parent.start, margin = marginPage)
+                        top.linkTo(currentWeatherInfo.bottom, margin = marginPage)
+                        end.linkTo(parent.end, margin = marginPage)
+                    }
+            ) {
+                BlockInfoTemperature(width = this.maxWidth, currentWeather = currentWeather)
             }
-        ) {
-            BlockInfoTemperature(width = this.maxWidth, currentWeather = currentWeather)
-        }
 
-        BoxWithConstraints(
-            modifier = Modifier.constrainAs(weatherOn5DaysBlock) {
-                start.linkTo(parent.start, margin = marginPage)
-                top.linkTo(currentWeatherDetailBlock.bottom, margin = marginPage)
-                end.linkTo(parent.end, margin = marginPage)
+            BoxWithConstraints(
+                modifier = Modifier
+                    .testTag("weatherOn5DaysBlock")
+                    .constrainAs(weatherOn5DaysBlock) {
+                        start.linkTo(parent.start, margin = marginPage)
+                        top.linkTo(currentWeatherDetailBlock.bottom, margin = marginPage)
+                        end.linkTo(parent.end, margin = marginPage)
+                    }
+            ) {
+                BlockWeatherOnSeveralDays(width = this.maxWidth, forecastWeather = forecastWeather)
             }
-        ) {
-            BlockWeatherOnSeveralDays(width = this.maxWidth, forecastWeather = forecastWeather)
         }
     }
 }

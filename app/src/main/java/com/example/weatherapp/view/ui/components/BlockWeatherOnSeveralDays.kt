@@ -15,19 +15,17 @@ fun BlockWeatherOnSeveralDays(
     width: Dp,
     forecastWeather: List<Forecastday>?
 ) {
-
     BlockInfo(width) {
         Column(
             modifier = Modifier
                 .padding(20.dp)
-                .fillMaxWidth(0.9f),
+                .fillMaxWidth(0.9f)
         ) {
             Row() {
                 Headline(text = "Прогноз погоды на 5 дней")
             }
             if (forecastWeather != null) {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-
+                LazyColumn(modifier = Modifier.fillMaxHeight(0.3f).wrapContentHeight(), verticalArrangement = Arrangement.spacedBy(8.dp), userScrollEnabled = true) {
                     items(forecastWeather) { item ->
                         ItemForecastWeather(forecastDay = item)
                     }
