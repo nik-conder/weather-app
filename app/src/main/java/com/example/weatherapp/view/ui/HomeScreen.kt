@@ -3,30 +3,47 @@ package com.example.weatherapp.ui.theme
 import android.icu.text.SimpleDateFormat
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.weatherapp.view.WeatherEvents
 import com.example.weatherapp.view.ui.HomeViewModel
+import com.example.weatherapp.view.ui.SearchEvents
 import com.example.weatherapp.view.ui.components.BlockInfoTemperature
 import com.example.weatherapp.view.ui.components.BlockWeatherOnSeveralDays
 import kotlinx.coroutines.delay
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
@@ -38,11 +55,12 @@ fun HomeScreen(
     val screenWidth = configuration.screenWidthDp.dp
     val stateWeather = vm.stateWeather.collectAsState()
     val onEvent = vm::onEvent
+    val onEventSearch = vm::onEventSearch
     val currentWeather = stateWeather.value.currentWeather
     val forecastWeather = stateWeather.value.forecastWeather?.forecast?.forecastday
     val networkAvailable = stateWeather.value.networkAvailable
     val isDay = if (currentWeather != null) currentWeather.current.is_day else 0
-    val isLoading  = stateWeather.value.isLoading
+    val isLoading = stateWeather.value.isLoading
     val colorList = if (isDay == 1) {
         listOf(
             Color(red = 0, green = 87, blue = 189, alpha = 255),
@@ -66,8 +84,14 @@ fun HomeScreen(
     val sdf = SimpleDateFormat("dd.mm.yyyy hh:mm:ss")
     val currentDate = remember { mutableStateOf("") }
 
+    val searchState = remember { mutableStateOf(false) }
+    val textCity = remember { mutableStateOf(TextFieldValue("")) }
+    val showKeyboard = remember { mutableStateOf(true) }
+    val focusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    val cityTextMaxChar = 24
 
-    LaunchedEffect(true)  {
+    LaunchedEffect(true) {
         while (true) {
             currentDate.value = sdf.format(Date())
             delay(1000)
@@ -77,8 +101,72 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Weather App") },
-            )
+                navigationIcon = {
+                    AnimatedVisibility(visible = searchState.value) {
+                        IconButton(onClick = {
+                            searchState.value = !searchState.value
+                        }) {
+                            Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                        }
+                    }
+                },
+                title = {
+                    AnimatedVisibility(visible = !searchState.value) {
+                        Text(text = "Weather App")
+                    }
+                    AnimatedVisibility(visible = searchState.value) {
+                        LaunchedEffect(searchState.value) {
+                            focusRequester.requestFocus()
+                            keyboard?.show()
+                        }
+                        OutlinedTextField(
+                            textStyle = MaterialTheme.typography.titleSmall,
+                            value = textCity.value,
+                            minLines = 1,
+                            maxLines = 1,
+                            singleLine = true,
+                            //label = { Text(text = "Город") },
+                            modifier = Modifier
+                                .focusRequester(focusRequester)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            isError = cityTextMaxChar - textCity.value.text.length == 0,
+                            keyboardOptions = KeyboardOptions.Default,
+                            onValueChange = { newText ->
+                                if (newText.text.length <= cityTextMaxChar) textCity.value =
+                                    newText
+                            },
+                            trailingIcon = {
+                                AnimatedVisibility(visible = textCity.value.text.isNotEmpty()) {
+                                    Icon(
+                                        modifier = Modifier.clickable {
+                                            textCity.value = TextFieldValue("")
+                                        },
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Clear"
+                                    )
+                                }
+                            },
+                        )
+                    }
+                },
+                actions = {
+                    if (searchState.value) {
+                        AnimatedVisibility(visible = textCity.value.text.isNotEmpty()) {
+                            IconButton(onClick = {
+                                onEventSearch(SearchEvents.Check(city = textCity.value.text))
+                            }) {
+                                Icon(imageVector = Icons.Default.Check, contentDescription = "OK")
+                            }
+                        }
+                    } else {
+                        IconButton(onClick = {
+                            searchState.value = !searchState.value
+                        }) {
+                            Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
+                        }
+                    }
+                })
         },
     ) { paddingValues ->
         ConstraintLayout(
@@ -109,9 +197,11 @@ fun HomeScreen(
                     }
 
                     if (!networkAvailable) {
-                        Row(modifier = Modifier
-                            .padding(top = 8.dp, bottom = 8.dp)
-                            .testTag("textNotNetwork")) {
+                        Row(
+                            modifier = Modifier
+                                .padding(top = 8.dp, bottom = 8.dp)
+                                .testTag("textNotNetwork")
+                        ) {
                             Text(
                                 text = "Нет интернет соединения!",
                                 fontSize = 14.sp,
@@ -139,7 +229,10 @@ fun HomeScreen(
                                 Text(text = "Загрузка...", fontSize = 20.sp)
                             }
                             Column() {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White
+                                )
                             }
                         }
                     } else {
