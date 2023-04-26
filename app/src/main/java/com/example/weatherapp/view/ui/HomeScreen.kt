@@ -33,13 +33,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.weatherapp.domain.useCase.WeatherStatus
 import com.example.weatherapp.view.WeatherEvents
 import com.example.weatherapp.view.ui.HomeViewModel
 import com.example.weatherapp.view.ui.SearchEvents
 import com.example.weatherapp.view.ui.components.BlockInfoTemperature
 import com.example.weatherapp.view.ui.components.BlockWeatherOnSeveralDays
+import com.example.weatherapp.view.ui.components.Notify
+import com.example.weatherapp.view.ui.components.NotifyUI
+import com.example.weatherapp.view.ui.theme.NotifyEvents
 import kotlinx.coroutines.delay
 import java.util.*
 
@@ -56,10 +61,13 @@ fun HomeScreen(
     val stateWeather = vm.stateWeather.collectAsState()
     val onEvent = vm::onEvent
     val onEventSearch = vm::onEventSearch
+    val onEventNotify = vm::onEventNotify
     val currentWeather = stateWeather.value.currentWeather
-    val forecastWeather = stateWeather.value.forecastWeather?.forecast?.forecastday
+    val forecastWeather = stateWeather.value.forecastWeather
+    val location = stateWeather.value.location
     val networkAvailable = stateWeather.value.networkAvailable
-    val isDay = if (currentWeather != null) currentWeather.current.is_day else 0
+    val notificationsList = stateWeather.value.notificationsList
+    val isDay = if (currentWeather != null) currentWeather.is_day else 0
     val isLoading = stateWeather.value.isLoading
     val colorList = if (isDay == 1) {
         listOf(
@@ -97,7 +105,6 @@ fun HomeScreen(
             delay(1000)
         }
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -168,6 +175,28 @@ fun HomeScreen(
                     }
                 })
         },
+        bottomBar = {
+            BottomAppBar() {
+                Button(onClick = {
+                    onEventNotify(
+                        NotifyEvents.Add(
+                            notify = NotifyUI.Notify(
+                                id = 1,
+                                title = "Hello world",
+                                status = NotifyUI.NotifyStatus.Success
+                            )
+                        )
+                    )
+                }) {
+                    Text(text = "Notify add")
+                }
+                Button(onClick = {
+                    onEventNotify(NotifyEvents.Delete)
+                }) {
+                    Text(text = "Notify delete")
+                }
+            }
+        }
     ) { paddingValues ->
         ConstraintLayout(
             modifier = Modifier
@@ -175,6 +204,19 @@ fun HomeScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
+
+            val stateMsg = remember { mutableStateOf(true) }
+
+            if (notificationsList != null) {
+                if (notificationsList.isNotEmpty()) {
+                    Notify(state = true, notificationsList = notificationsList)
+                }
+            }
+
+            LaunchedEffect(true) {
+                delay(10000)
+                stateMsg.value = false
+            }
 
             val (currentWeatherInfo, currentWeatherDetailBlock, weatherOn5DaysBlock) = createRefs()
 
@@ -236,10 +278,10 @@ fun HomeScreen(
                             }
                         }
                     } else {
-                        if (currentWeather != null) {
+                        if (location != null) {
                             Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
                                 Text(
-                                    text = "${currentWeather.location.country}, ${currentWeather.location.region}",
+                                    text = "${location.country}, ${location.region}",
                                     fontSize = 12.sp,
                                     color = Color.White
                                 )
@@ -248,7 +290,7 @@ fun HomeScreen(
                         if (currentWeather != null) {
                             Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
                                 Text(
-                                    text = "${currentWeather.current.temp_c} °C",
+                                    text = "${currentWeather.temp_c} °C",
                                     fontSize = 42.sp,
                                     color = Color.White,
                                     fontWeight = FontWeight(600)
@@ -258,7 +300,7 @@ fun HomeScreen(
                         if (currentWeather != null) {
                             Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
                                 Text(
-                                    text = currentWeather.current.condition.text,
+                                    text = currentWeather.condition.text,
                                     fontSize = 16.sp,
                                     color = Color.White
                                 )

@@ -8,12 +8,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.weatherapp.data.forecast.Forecast
 import com.example.weatherapp.data.forecast.Forecastday
 
 @Composable
 fun BlockWeatherOnSeveralDays(
     width: Dp,
-    forecastWeather: List<Forecastday>?
+    forecastWeather: Forecast?
 ) {
     BlockInfo(width) {
         Column(
@@ -26,7 +27,7 @@ fun BlockWeatherOnSeveralDays(
             }
             if (forecastWeather != null) {
                 LazyColumn(modifier = Modifier.fillMaxHeight(0.3f).wrapContentHeight(), verticalArrangement = Arrangement.spacedBy(8.dp), userScrollEnabled = true) {
-                    items(forecastWeather) { item ->
+                    items(forecastWeather.forecastday) { item ->
                         ItemForecastWeather(forecastDay = item)
                     }
                 }

@@ -1,16 +1,21 @@
 package com.example.weatherapp.view.ui
 
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.weatherapp.data.currentWeather.CurrentWeather
+import com.example.weatherapp.data.forecast.Current
+import com.example.weatherapp.data.forecast.Forecast
 import com.example.weatherapp.data.forecast.ForecastWeather
+import com.example.weatherapp.data.forecast.Location
 import com.example.weatherapp.domain.useCase.NetworkUseCase
 import com.example.weatherapp.domain.useCase.WeatherUseCase
 import com.example.weatherapp.view.WeatherEvents
 import com.example.weatherapp.view.WeatherState
+import com.example.weatherapp.view.ui.components.NotifyUI
+import com.example.weatherapp.view.ui.theme.NotifyEvents
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,41 +69,18 @@ class HomeViewModel @Inject constructor(
                     isLoading = true
                 )
             }
-            loadingCurrentWeather()
-            loadingForecast()
+            loadingWeather(q = stateWeather.value.city)
         } else {
             Log.e("Network", "not available!")
         }
         _stateWeather.update { newValue -> newValue.copy(isLoading = false) }
     }
 
-    private fun loadingCurrentWeather() = CoroutineScope(Dispatchers.IO).launch {
-        try {
-            val weatherLoad: Deferred<Response<CurrentWeather>> = async {
-                weatherUseCase.getCurrentWeather(
-                    q = stateWeather.value.city,
-                    lang = stateWeather.value.lang
-                ).execute()
-            }
-            val code = weatherLoad.await().code()
-            val body = weatherLoad.await().body()
-
-            if (code == 200) {
-                _stateWeather.update { newValues -> newValues.copy(currentWeather = body) }
-            } else {
-                _stateWeather.update { newValue -> newValue.copy(isLoading = false) }
-            }
-
-        } catch (e: Exception) {
-            Log.e("Loading current weather", e.message.toString())
-        }
-    }
-
-    private fun loadingForecast() = CoroutineScope(Dispatchers.IO).launch {
+    private fun loadingWeather(q: String) = CoroutineScope(Dispatchers.IO).launch {
         try {
             val weatherLoad: Deferred<Response<ForecastWeather>> = async {
                 weatherUseCase.getForecastWeather(
-                    q = stateWeather.value.city,
+                    q = q,
                     lang = stateWeather.value.lang,
                     days = stateWeather.value.days
                 ).execute()
@@ -107,24 +89,39 @@ class HomeViewModel @Inject constructor(
             val body = weatherLoad.await().body()
 
             if (code == 200) {
-                updateForecastWeather(body)
+                if (body != null) {
+                    updateWeather(body)
+                }
             } else {
                 _stateWeather.update { newValue -> newValue.copy(isLoading = false) }
             }
         } catch (e: Exception) {
-            Log.e("Loading forecast weather", e.message.toString())
+            Log.e(TAG, e.message.toString())
         }
     }
 
-    private fun updateCurrentWeather(currentWeather: CurrentWeather?) {
-        if (currentWeather != null) {
-            _stateWeather.update { newValues -> newValues.copy(currentWeather = currentWeather) }
-        }
-    }
-
-    private fun updateForecastWeather(forecastWeather: ForecastWeather?) {
+    private fun updateWeather(forecastWeather: ForecastWeather?) {
         if (forecastWeather != null) {
-            _stateWeather.update { newValues -> newValues.copy(forecastWeather = forecastWeather) }
+            updateCurrentWeather(forecastWeather.current)
+            updateForecastWeather(forecastWeather.forecast)
+            updateLocation(forecastWeather.location)
+        }
+    }
+    private fun updateCurrentWeather(current: Current?) {
+        if (current != null) {
+            _stateWeather.update { newValues -> newValues.copy(currentWeather = current) }
+        }
+    }
+
+    private fun updateForecastWeather(forecast: Forecast?) {
+        if (forecast != null) {
+            _stateWeather.update { newValues -> newValues.copy(forecastWeather = forecast) }
+        }
+    }
+
+    private fun updateLocation(location: Location?) {
+        if (location != null) {
+            _stateWeather.update { newValues -> newValues.copy(location = location) }
         }
     }
 
@@ -146,6 +143,27 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun onEventNotify(event: NotifyEvents) {
+
+        // TODO: остановились тут!!!!!!!
+
+        when (event) {
+            is NotifyEvents.Delete -> {
+                val newList = stateWeather.value.notificationsList?.removeFirstOrNull()
+                _stateWeather.update { newValues ->
+                    newValues.copy(notificationsList = mutableListOf<NotifyUI.Notify>())
+                }
+
+            }
+            is NotifyEvents.Add -> {
+                val newList: MutableList<NotifyUI.Notify> = mutableListOf(event.notify)
+                _stateWeather.update { newValues ->
+                    newValues.copy(
+                        notificationsList = newList)
+                }
+            }
+        }
+    }
     fun onEventSearch(event: SearchEvents) {
         when (event) {
             is SearchEvents.Check -> {
@@ -153,33 +171,21 @@ class HomeViewModel @Inject constructor(
                 if (network) {
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
-                            val requestCurrentWeather = async {
-                                weatherUseCase.getCurrentWeather(
+                            val request = async {
+                                weatherUseCase.getForecastWeather(
                                     q = event.city,
-                                    lang = stateWeather.value.lang
+                                    lang = stateWeather.value.lang,
+                                    days = stateWeather.value.days
                                 )
                             }
-                            val executeCurrent = requestCurrentWeather.await().execute()
 
-                            if (executeCurrent.code() == 200) {
+                            val execute = request.await().execute()
 
-                                updateCurrentWeather(executeCurrent.body())
-
-                                val requestForecastWeather = async {
-                                    weatherUseCase.getForecastWeather(
-                                        q = event.city,
-                                        lang = stateWeather.value.lang,
-                                        days = stateWeather.value.days
-                                    )
+                            if (execute.code() == 200) {
+                                if (execute.body() != null) {
+                                    loadingWeather(q = execute.body()!!.location.region)
                                 }
-
-                                val executeForecast = requestForecastWeather.await().execute()
-
-                                if (executeForecast.body() != null) {
-                                    updateForecastWeather(forecastWeather = executeForecast.body())
-                                }
-
-                            } else if (executeCurrent.code() == 400) {
+                            } else if (execute.code() == 400) {
                                 println("Неизвестная ошибка")
                             } else {
                                 println("Неизвестная ошибка")
@@ -194,7 +200,6 @@ class HomeViewModel @Inject constructor(
                         .show()
                 }
             }
-            else -> {}
         }
     }
 }

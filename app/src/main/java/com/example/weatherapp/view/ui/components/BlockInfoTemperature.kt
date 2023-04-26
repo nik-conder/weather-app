@@ -9,11 +9,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.weatherapp.data.currentWeather.CurrentWeather
+import com.example.weatherapp.data.forecast.Current
 
 @Composable
 fun BlockInfoTemperature(
     width: Dp,
-    currentWeather: CurrentWeather?
+    currentWeather: Current?
 ) {
 
     BlockInfo(width) {
@@ -27,7 +28,7 @@ fun BlockInfoTemperature(
             }
             if (currentWeather != null) {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    currentWeather.current.let {
+                    currentWeather.let {
                         item {
                             Row() {
                                 Text(
