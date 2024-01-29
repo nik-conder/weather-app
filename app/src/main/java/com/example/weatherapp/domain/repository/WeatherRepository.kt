@@ -1,7 +1,7 @@
 package com.example.weatherapp.domain.repository
 
-import com.example.weatherapp.data.currentWeather.CurrentWeather
-import com.example.weatherapp.data.forecast.ForecastWeather
+import com.example.weatherapp.data.enities.currentWeather.CurrentWeather
+import com.example.weatherapp.data.enities.forecast.ForecastWeather
 import retrofit2.Call
 
 interface WeatherRepository {

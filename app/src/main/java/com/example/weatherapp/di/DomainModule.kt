@@ -1,8 +1,7 @@
 package com.example.weatherapp.di
 
 import android.content.Context
-import com.example.weatherapp.data.ApiRepository
-import com.example.weatherapp.domain.repository.WeatherRepository
+import com.example.weatherapp.data.repo.ApiRepository
 import com.example.weatherapp.domain.useCase.NetworkUseCase
 import com.example.weatherapp.domain.useCase.WeatherUseCase
 import dagger.Module

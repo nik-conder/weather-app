@@ -1,8 +1,8 @@
-package com.example.weatherapp.data
+package com.example.weatherapp.data.repo
 
 import com.example.weatherapp.data.network.WeatherSource
-import com.example.weatherapp.data.currentWeather.CurrentWeather
-import com.example.weatherapp.data.forecast.ForecastWeather
+import com.example.weatherapp.data.enities.currentWeather.CurrentWeather
+import com.example.weatherapp.data.enities.forecast.ForecastWeather
 import com.example.weatherapp.domain.repository.WeatherRepository
 import retrofit2.Call
 import javax.inject.Inject

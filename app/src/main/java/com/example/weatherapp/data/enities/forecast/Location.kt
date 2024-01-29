@@ -1,4 +1,4 @@
-package com.example.weatherapp.data.currentWeather
+package com.example.weatherapp.data.enities.forecast
 
 data class Location(
     val country: String,

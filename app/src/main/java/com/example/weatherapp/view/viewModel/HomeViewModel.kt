@@ -1,4 +1,4 @@
-package com.example.weatherapp.view.ui
+package com.example.weatherapp.view.viewModel
 
 import android.content.ContentValues.TAG
 import android.content.Context
@@ -6,14 +6,15 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.weatherapp.data.forecast.Current
-import com.example.weatherapp.data.forecast.Forecast
-import com.example.weatherapp.data.forecast.ForecastWeather
-import com.example.weatherapp.data.forecast.Location
+import com.example.weatherapp.data.enities.forecast.Current
+import com.example.weatherapp.data.enities.forecast.Forecast
+import com.example.weatherapp.data.enities.forecast.ForecastWeather
+import com.example.weatherapp.data.enities.forecast.Location
 import com.example.weatherapp.domain.useCase.NetworkUseCase
 import com.example.weatherapp.domain.useCase.WeatherUseCase
-import com.example.weatherapp.view.WeatherEvents
-import com.example.weatherapp.view.WeatherState
+import com.example.weatherapp.view.event.SearchEvents
+import com.example.weatherapp.view.event.WeatherEvents
+import com.example.weatherapp.view.state.WeatherState
 import com.example.weatherapp.view.ui.components.NotifyUI
 import com.example.weatherapp.view.ui.theme.NotifyEvents
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -143,7 +144,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun onEventNotify(event: NotifyEvents) {
+   /* fun onEventNotify(event: NotifyEvents) {
 
         // TODO: остановились тут!!!!!!!
 
@@ -163,7 +164,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
-    }
+    }*/
     fun onEventSearch(event: SearchEvents) {
         when (event) {
             is SearchEvents.Check -> {

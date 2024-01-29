@@ -9,8 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.weatherapp.data.forecast.Forecast
-import com.example.weatherapp.data.forecast.Forecastday
+import com.example.weatherapp.data.enities.forecast.Forecastday
 
 @Composable
 fun ItemForecastWeather(

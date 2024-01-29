@@ -3,23 +3,42 @@ package com.example.weatherapp.ui.theme
 import android.icu.text.SimpleDateFormat
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.rounded.Clear
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -33,22 +52,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.weatherapp.domain.useCase.WeatherStatus
-import com.example.weatherapp.view.WeatherEvents
-import com.example.weatherapp.view.ui.HomeViewModel
-import com.example.weatherapp.view.ui.SearchEvents
+import com.example.weatherapp.view.event.WeatherEvents
+import com.example.weatherapp.view.viewModel.HomeViewModel
+import com.example.weatherapp.view.event.SearchEvents
 import com.example.weatherapp.view.ui.components.BlockInfoTemperature
 import com.example.weatherapp.view.ui.components.BlockWeatherOnSeveralDays
-import com.example.weatherapp.view.ui.components.Notify
-import com.example.weatherapp.view.ui.components.NotifyUI
-import com.example.weatherapp.view.ui.theme.NotifyEvents
 import kotlinx.coroutines.delay
-import java.util.*
+import java.util.Date
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
@@ -61,14 +75,15 @@ fun HomeScreen(
     val stateWeather = vm.stateWeather.collectAsState()
     val onEvent = vm::onEvent
     val onEventSearch = vm::onEventSearch
-    val onEventNotify = vm::onEventNotify
+    //val onEventNotify = vm::onEventNotify
     val currentWeather = stateWeather.value.currentWeather
     val forecastWeather = stateWeather.value.forecastWeather
     val location = stateWeather.value.location
     val networkAvailable = stateWeather.value.networkAvailable
-    val notificationsList = stateWeather.value.notificationsList
+    //val notificationsList = stateWeather.value.notificationsList
     val isDay = if (currentWeather != null) currentWeather.is_day else 0
     val isLoading = stateWeather.value.isLoading
+    val scrollVertical = rememberScrollState()
     val colorList = if (isDay == 1) {
         listOf(
             Color(red = 0, green = 87, blue = 189, alpha = 255),
@@ -94,7 +109,7 @@ fun HomeScreen(
 
     val searchState = remember { mutableStateOf(false) }
     val textCity = remember { mutableStateOf(TextFieldValue("")) }
-    val showKeyboard = remember { mutableStateOf(true) }
+    //val showKeyboard = remember { mutableStateOf(true) }
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     val cityTextMaxChar = 24
@@ -108,6 +123,13 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconContentColor = MaterialTheme.colorScheme.onBackground
+                ),
                 navigationIcon = {
                     AnimatedVisibility(visible = searchState.value) {
                         IconButton(onClick = {
@@ -176,7 +198,7 @@ fun HomeScreen(
                 })
         },
         bottomBar = {
-            BottomAppBar() {
+           /* BottomAppBar() {
                 Button(onClick = {
                     onEventNotify(
                         NotifyEvents.Add(
@@ -195,7 +217,7 @@ fun HomeScreen(
                 }) {
                     Text(text = "Notify delete")
                 }
-            }
+            }*/
         }
     ) { paddingValues ->
         ConstraintLayout(
@@ -203,24 +225,18 @@ fun HomeScreen(
                 .background(backgroundGradient)
                 .padding(paddingValues)
                 .fillMaxSize()
+                .verticalScroll(scrollVertical)
         ) {
-
-            val stateMsg = remember { mutableStateOf(true) }
-
-            if (notificationsList != null) {
-                if (notificationsList.isNotEmpty()) {
-                    Notify(state = true, notificationsList = notificationsList)
-                }
-            }
-
-            LaunchedEffect(true) {
-                delay(10000)
-                stateMsg.value = false
-            }
 
             val (currentWeatherInfo, currentWeatherDetailBlock, weatherOn5DaysBlock) = createRefs()
 
-            BoxWithConstraints(
+            /*if (notificationsList != null) {
+                if (notificationsList.isNotEmpty()) {
+                    Notify(state = true, notificationsList = notificationsList)
+                }
+            }*/
+
+            Box(
                 modifier = Modifier
                     .testTag("currentWeatherInfo")
                     .constrainAs(currentWeatherInfo) {
@@ -229,7 +245,9 @@ fun HomeScreen(
                         end.linkTo(parent.end, margin = marginPage)
                     }
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Row(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
                         Text(
                             text = currentDate.value,
@@ -250,7 +268,7 @@ fun HomeScreen(
                                 color = Color.White
                             )
                         }
-                        Row() {
+                        Row {
                             Button(
                                 modifier = Modifier.testTag("btnRefresh"),
                                 onClick = {
@@ -267,10 +285,10 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column() {
+                            Column {
                                 Text(text = "Загрузка...", fontSize = 20.sp)
                             }
-                            Column() {
+                            Column {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
                                     color = Color.White
@@ -309,7 +327,7 @@ fun HomeScreen(
                     }
                 }
             }
-            BoxWithConstraints(
+            Box(
                 modifier = Modifier
                     .testTag("currentWeatherDetailBlock")
                     .constrainAs(currentWeatherDetailBlock) {
@@ -318,10 +336,10 @@ fun HomeScreen(
                         end.linkTo(parent.end, margin = marginPage)
                     }
             ) {
-                BlockInfoTemperature(width = this.maxWidth, currentWeather = currentWeather)
+                BlockInfoTemperature(width = screenWidth, currentWeather = currentWeather)
             }
 
-            BoxWithConstraints(
+            Box(
                 modifier = Modifier
                     .testTag("weatherOn5DaysBlock")
                     .constrainAs(weatherOn5DaysBlock) {
@@ -330,7 +348,7 @@ fun HomeScreen(
                         end.linkTo(parent.end, margin = marginPage)
                     }
             ) {
-                BlockWeatherOnSeveralDays(width = this.maxWidth, forecastWeather = forecastWeather)
+                BlockWeatherOnSeveralDays(width = screenWidth, forecastWeather = forecastWeather)
             }
         }
     }

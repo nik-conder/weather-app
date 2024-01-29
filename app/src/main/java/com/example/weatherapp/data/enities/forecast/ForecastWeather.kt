@@ -1,4 +1,4 @@
-package com.example.weatherapp.data.forecast
+package com.example.weatherapp.data.enities.forecast
 
 data class ForecastWeather(
     val current: Current,

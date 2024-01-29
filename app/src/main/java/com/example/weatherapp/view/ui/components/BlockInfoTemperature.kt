@@ -8,8 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.weatherapp.data.currentWeather.CurrentWeather
-import com.example.weatherapp.data.forecast.Current
+import com.example.weatherapp.data.enities.forecast.Current
 
 @Composable
 fun BlockInfoTemperature(
@@ -23,14 +22,19 @@ fun BlockInfoTemperature(
                 .padding(20.dp)
                 .fillMaxWidth(0.9f),
         ) {
-            Row() {
+            Row {
                 Headline(text = "Подробная информация")
             }
             if (currentWeather != null) {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(
+                    modifier = Modifier
+                    .heightIn(min = 50.dp, max = 500.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    userScrollEnabled = true
+                ) {
                     currentWeather.let {
                         item {
-                            Row() {
+                            Row {
                                 Text(
                                     fontSize = 14.sp,
                                     text = "Ветер: ${it.wind_kph} км/ч, ${it.wind_dir} направления"
@@ -39,7 +43,7 @@ fun BlockInfoTemperature(
                         }
 
                         item {
-                            Row() {
+                            Row {
                                 Text(
                                     fontSize = 14.sp,
                                     text = "Атм. давление: ${it.pressure_mb} миллибар"
@@ -48,20 +52,20 @@ fun BlockInfoTemperature(
                         }
 
                         item {
-                            Row() {
+                            Row {
                                 Text(fontSize = 14.sp, text = "Влажность: ${it.humidity}%")
                             }
                         }
 
                         item {
 
-                            Row() {
+                            Row {
                                 Text(fontSize = 14.sp, text = "Видимость: ${it.vis_km} км.")
                             }
                         }
 
                         item {
-                            Row() {
+                            Row {
                                 Text(fontSize = 14.sp, text = "Прогноз от: ${it.last_updated}")
                             }
                         }

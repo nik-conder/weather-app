@@ -3,7 +3,7 @@ package com.example.weatherapp.di
 import android.content.Context
 import com.example.weatherapp.domain.useCase.NetworkUseCase
 import com.example.weatherapp.domain.useCase.WeatherUseCase
-import com.example.weatherapp.view.ui.HomeViewModel
+import com.example.weatherapp.view.viewModel.HomeViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

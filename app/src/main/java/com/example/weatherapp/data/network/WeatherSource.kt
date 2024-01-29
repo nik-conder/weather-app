@@ -1,8 +1,7 @@
 package com.example.weatherapp.data.network
 
-import com.example.weatherapp.Constants.API.KEY_API
-import com.example.weatherapp.data.currentWeather.CurrentWeather
-import com.example.weatherapp.data.forecast.ForecastWeather
+import com.example.weatherapp.data.enities.currentWeather.CurrentWeather
+import com.example.weatherapp.data.enities.forecast.ForecastWeather
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Headers
@@ -28,5 +27,9 @@ interface WeatherSource {
 
     @GET("/")
     fun getConnect(): Call<Int>
+
+    companion object {
+        const val KEY_API: String = "264bba121a834c6daf253227232202"
+    }
 
 }
